@@ -23,8 +23,13 @@ class data(object):
             col.append(int(c))
             data.append(int(d))
         #print row
-        self.T = coo_matrix((data, (row, col)))
-        pdb.set_trace()
+        row = np.array(row)
+        col = np.array(col)
+        data = np.array(data)
+        Data = np.vstack([row, col, data]).T
+        np.random.shuffle(Data)
+        self.T = coo_matrix((Data[:, 2], (Data[:, 0], Data[:, 1])))
+        #pdb.set_trace()
 
 
 if __name__ == "__main__":
