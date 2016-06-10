@@ -30,17 +30,18 @@ class trainAE(object):
         T = self.AE.T
         # COnverting to csr format for indexing
         T = T.tocsr()
+        #pdb.set_trace()
         nonzero_indices = T.nonzero()
         for epoch in xrange(self.epochs):
             print("Running epoch %d"%(epoch))
-            for i in nonzero_indices[0]:
+            for i in np.unique(nonzero_indices[0]):
                 # get indices of observed values from the user 'i' 's vector
                 indices = T[i, :].nonzero()[1]
                 #print indices
                 #indices = indices.reshape(indices.shape[0],)
                 # Get correspoding ratings
                 ratings = T[i, indices].toarray()
-                print ratings.shape
+                #print ratings
                 ratings = ratings.reshape(ratings.shape[1],)
                 # Convert inputs to theano datatype
                 indices = indices.astype(np.int32)
@@ -51,7 +52,7 @@ class trainAE(object):
 
 
 if __name__ == "__main__":
-    autoencoder = trainAE('/home/shashank/data/SIEL/trust-aware-reco/Epinions_signed/soc-sign-epinions.txt', 100)
+    autoencoder = trainAE('./soc-sign-epinions.txt', 100)
     autoencoder.train()
 
 

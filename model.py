@@ -46,7 +46,7 @@ class AutoEncoder(object):
         # Calculate hidden layer activations (g(Vr + mu)
         #hidden_activation = T.tanh(T.dot(self.V, r
 
-    def model(self, lr = 0.1, loss='rmse'):
+    def model(self, lr = 0.4, loss='rmse'):
         ''' Define model on single example (batch_size = 1) '''
         W = np.random.uniform(low=-np.sqrt(6 / float(self.n + self.k)),
                               high=np.sqrt(6 / float(self.n + self.k)),
@@ -87,7 +87,8 @@ class AutoEncoder(object):
                                 * T.log(1 - output_activation))
         elif loss == 'rmse':
             # RMSE loss
-            self.loss = T.sum((target - output_activation) ** 2)
+            self.loss = T.sum((target - output_activation) ** 2) + \
+                        0.001 * T.sum(self.W ** 2) + 0.001 * T.sum(self.V ** 2)
 
         # gradients w.r.t paramters
         grads = T.grad(self.loss, wrt=self.param)
