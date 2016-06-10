@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-
 from __future__ import print_function
 import numpy as np
 from theano import tensor as T
@@ -55,8 +54,10 @@ class AutoEncoder(object):
         V = np.random.uniform(low=-np.sqrt(6 / float(self.n + self.k)),
                               high=np.sqrt(6 / float(self.n + self.k)),
                               size=(self.k, self.n))
-        mu = np.zeros((self.k, 1))
-        b = np.zeros((self.n, 1))
+        #mu = np.zeros((self.k, 1))
+        #b = np.zeros((self.n, 1))
+        mu = np.zeros((self.k,))
+        b = np.zeros((self.n,))
         # Creating theano shared variables from these
         self.W = theano.shared(W, name='W', borrow=True)
         self.V = theano.shared(V, name='V', borrow=True)
@@ -74,8 +75,8 @@ class AutoEncoder(object):
         # TO-DO : Check for aliasing issue, if any
         target = rating
         # Calculate hidden layer activations h =  (g(Vr + mu))
-        hidden_activation = T.tanh(T.dot(self.V[:, index] , rating)
-                                   + self.mu[index])
+        hidden_activation = T.tanh(T.dot(self.V[:, index], rating)
+                                   + self.mu)
         # Calculate output layer activations ( f(Wh + b))
         output_activation = T.tanh(T.dot(self.W[index, :], hidden_activation)
                                    + self.b[index])
@@ -92,9 +93,8 @@ class AutoEncoder(object):
         grads = T.grad(self.loss, wrt=self.param)
         updates = [(param, param - lr * param_grad) for (param, param_grad)
                    in zip(self.param, grads)]
-        self.model = theano.function(inputs=[index, rating],
-                                     outputs=self.loss,
-                                     updates=updates)
+        self.ae = theano.function(inputs=[index, rating],
+                                     outputs=self.loss, updates=updates)
 
 if __name__ == "__main__":
     AE = AutoEncoder('/home/shashank/data/SIEL/trust-aware-reco/Epinions_signed/soc-sign-epinions.txt', 100)

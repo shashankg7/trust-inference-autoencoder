@@ -6,7 +6,7 @@ import numpy as np
 import theano
 from theano import tensor as T
 from model import AutoEncoder
-
+import pdb
 
 class trainAE(object):
 
@@ -36,13 +36,18 @@ class trainAE(object):
             for i in nonzero_indices[0]:
                 # get indices of observed values from the user 'i' 's vector
                 indices = T[i, :].nonzero()[1]
-                indices = indices.reshape(indices.shape[0],)
-                print indices.shape
+                #print indices
+                #indices = indices.reshape(indices.shape[0],)
                 # Get correspoding ratings
                 ratings = T[i, indices].toarray()
-                loss = self.AE.model([indices, ratings])
+                print ratings.shape
+                ratings = ratings.reshape(ratings.shape[1],)
+                # Convert inputs to theano datatype
+                indices = indices.astype(np.int32)
+                ratings = ratings.astype(np.int32)
+                #pdb.set_trace()
+                loss = self.AE.ae(indices, ratings)
                 print("Loss at epoch %d is %f"%(epoch, loss))
-
 
 
 if __name__ == "__main__":

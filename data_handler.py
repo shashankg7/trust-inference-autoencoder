@@ -1,6 +1,6 @@
+#! /usr/bin/env python
 
 import numpy as np
-from scipy.sparse import dok_matrix
 from scipy.sparse import coo_matrix
 import pdb
 
