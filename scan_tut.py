@@ -15,10 +15,10 @@ ratings= T.matrix()
 
 def step(ind, rat, indices, ratings):
     # vector of index of non-zero entries in ind
-    ind_nz = T.gt(ind, 0).nonzero()
+    #ind_nz = T.gt(ind, 0).nonzero()
     rat_nz = T.gt(rat, 0).nonzero()
-    hid = T.tanh(T.dot(V[:, ind_nz], rat[rat_nz]))
-    out = T.mean(hid)
+    hid = T.dot(V[:, rat_nz], rat[rat_nz])
+    out = T.sum(hid)
     #out = T.tanh(T.dot(W[ind_nz, :], hid))
     return out
 
@@ -26,7 +26,7 @@ result, updates = theano.scan(fn=step, outputs_info=None, sequences=[indices, ra
 
 scan_test = theano.function([indices, ratings], result)
 
-indices = np.array([[1,0,2], [1,0,0],[0,0,0]]).astype(np.int32)
-ratings = np.array([[1,0,1], [1,0,0],[0,0,0]]).astype(np.float32)
+indice = np.array([[1,0,2], [1,0,0],[0,0,0]]).astype(np.int32)
+rating = np.array([[1,0,1], [1,0,0],[0,0,0]]).astype(np.float32)
 
-print scan_test(indices, ratings)
+print scan_test(indice, rating)

@@ -23,6 +23,7 @@ class trainAE(object):
         self.AE = AutoEncoder(path, k)
         # Definne the autoencoder model
         self.AE.model()
+        self.AE.model_batch()
         self.epochs = n_epochs
 
 
@@ -50,10 +51,23 @@ class trainAE(object):
                 loss = self.AE.ae(indices, ratings)
                 print("Loss at epoch %d is %f"%(epoch, loss))
 
+    # Batch training method
+    def train_batch(self, batch_size):
+        T = self.AE.T
+        T = T.tocsr()
+        nonzero_indices = T.nonzero()
+        n_users = len(np.unique(nonzero_indices[0]))
+        for epoch in xrange(self.epochs):
+            for i in xrange(0, n_users, batch_size):
+                ratings = T[i:(i + batch_size), :].toarray()
+                loss = self.AE.ae_batch(ratings)
+                print("Loss for batch %d is %f"%(i, loss))
+
+
 
 if __name__ == "__main__":
-    autoencoder = trainAE('./soc-sign-epinions.txt', 100)
-    autoencoder.train()
+    autoencoder = trainAE('/home/shashank/data/SIEL/trust-aware-reco/Epinions_signed/soc-sign-epinions.txt', 100)
+    autoencoder.train_batch(32)
 
 
 
