@@ -49,6 +49,7 @@ class AutoEncoder(object):
             # Function applied at each step of scan
             # find all non-zero indices from index (observed values)
             #ind_nz = T.gt(ind, 0).nonzero()
+            res = T.zeros_like(rat)
             rat_nz = T.gt(rat, 0).nonzero()
             # target
             # Check for mem. aliasing
@@ -58,15 +59,17 @@ class AutoEncoder(object):
             output_activation = T.tanh(T.dot(W[rat_nz, :], \
                                              hidden_activation) \
                                        + b[rat_nz])
-            error = T.sum((tar - output_activation) ** 2)
-            return error
+            #error = T.sum((tar - output_activation) ** 2)
+            #return error
+            res = T.set_subtensor(res[rat_nz] ,output_activation)
+            return res
 
         scan_res, scan_updates = theano.scan(fn=step, outputs_info=None, \
                                              sequences=[rating],
                                              non_sequences=[W, V, \
                                                             mu, b])
 
-        self.loss = T.mean(scan_res)
+        self.loss = T.mean(T.sum((scan_res - rating) ** 2), axis=1)
         grads = T.grad(self.loss, self.param)
         updates = [(param, param - lr * grad) for (param, grad) in \
                    zip(self.param, grads)]

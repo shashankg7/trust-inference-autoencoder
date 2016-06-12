@@ -24,7 +24,7 @@ def step(ind, rat, indices, ratings):
 
 result, updates = theano.scan(fn=step, outputs_info=None, sequences=[indices, ratings], non_sequences=[W, V])
 
-scan_test = theano.function([indices, ratings], result)
+scan_test = theano.function([indices, ratings], [result, nz])
 
 indice = np.array([[1,0,2], [1,0,0],[0,0,0]]).astype(np.int32)
 rating = np.array([[1,0,1], [1,0,0],[0,0,0]]).astype(np.float32)

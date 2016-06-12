@@ -60,6 +60,8 @@ class trainAE(object):
         for epoch in xrange(self.epochs):
             for i in xrange(0, n_users, batch_size):
                 ratings = T[i:(i + batch_size), :].toarray()
+                #print ratings
+                #pdb.set_trace()
                 loss = self.AE.ae_batch(ratings)
                 print("Loss for batch %d is %f"%(i, loss))
 
