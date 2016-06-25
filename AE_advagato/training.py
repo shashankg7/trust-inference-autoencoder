@@ -21,7 +21,7 @@ import resource
 
 class trainAE(object):
 
-    def __init__(self, path, k, lr= 0.1, batch_size=1, loss='bce', n_epochs=100):
+    def __init__(self, path, k, lr= 0.1, batch_size=1, loss='bce', n_epochs=3):
         '''
         Arguments:
             path : path to training data
@@ -77,16 +77,21 @@ class trainAE(object):
                 #pdb.set_trace()
                 loss = self.AE.ae_batch(ratings)
                 #loss = self.AE.debug(ratings)
-                print loss
+                #print loss
                 #pdb.set_trace()
-                #print("Loss for epoch %d  batch %d is %f"%(epoch, ind, loss))
+                print("Loss for epoch %d  batch %d is %f"%(epoch, ind, loss))
+
+    def RMSE(self):
+        W, V, mu, b = self.AE.get_params()
+
+        pdb.set_trace()
 
 
 
 if __name__ == "__main__":
-    autoencoder = trainAE('./soc-sign-epinions.txt', 100)
-    autoencoder.train_batch(16)
-
+    autoencoder = trainAE('../data/data.mat', 100)
+    autoencoder.train_batch(64)
+    autoencoder.RMSE()
 
 
 

@@ -5,19 +5,30 @@ import numpy as np
 from theano import tensor as T
 import theano
 from scipy.sparse import coo_matrix
-from data_handler import data
 import pdb
+from scipy.io import loadmat
 
 theano.config.compute_test_value = 'off'
 
 class AutoEncoder(object):
 
     def __init__(self, path, k):
-        self.data = data(path)
         # hidden layer's dimension
         self.k = k
-        self.data.load_data()
-        self.T = self.data.T
+        self.t = loadmat(path)
+        self.t = self.t['data']
+        nz_ind = self.t.nonzero()
+        NZ = np.vstack((nz_ind[0], nz_ind[1])).T
+        np.random.shuffle(NZ)
+        self.train_ind = NZ[:len(NZ)-500]
+        self.test_ind = NZ[len(NZ)-500:]
+        t = self.t.tolil()
+        self.gt = self.t[self.test_ind[:, 0], self.test_ind[:, 1]]
+        t[self.test_ind[:, 0], self.test_ind[:,1]] = 0
+        self.T = t.tocsc()
+        pdb.set_trace()
+        self.T = self.t
+        #pdb.set_trace()
         self.n = self.T.shape[0]
         #self.n = 3
 
@@ -91,6 +102,8 @@ class AutoEncoder(object):
 
         self.ae_batch = theano.function([rating], self.loss, updates=updates)
         self.debug = theano.function([rating], scan_res, updates=None)
+        # Theano function to get params
+        self.get_params = theano.function([], self.param)
 
 
     def model(self, lr = 0.4, loss='rmse'):
@@ -145,8 +158,9 @@ class AutoEncoder(object):
                                      outputs=self.loss, updates=updates)
 
 
+
 if __name__ == "__main__":
-    AE = AutoEncoder('./soc-sign-epinions.txt', 100)
+    AE = AutoEncoder('../data/data.mat', 100)
     AE.model_batch()
     rating = np.array([[1,1,1],[1,1,1],[1,1,1]]).astype(np.float32)
     AE.ae_batch(rating)
