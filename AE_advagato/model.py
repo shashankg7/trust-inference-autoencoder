@@ -26,11 +26,12 @@ class AutoEncoder(object):
         self.gt = self.t[self.test_ind[:, 0], self.test_ind[:, 1]]
         t[self.test_ind[:, 0], self.test_ind[:,1]] = 0
         self.T = t.tocsc()
-        pdb.set_trace()
-        self.T = self.t
         #pdb.set_trace()
         self.n = self.T.shape[0]
-        #self.n = 3
+        self.W = []
+        self.V = []
+        self.b = []
+        self.mu = []
 
     def model_batch(self, loss='bce', lr=0.1):
         ''' define the AutoEncoder model (mini-batch) '''
@@ -48,6 +49,10 @@ class AutoEncoder(object):
         V = theano.shared(v, name='V', borrow=True)
         mu = theano.shared(MU, name='mu', borrow=True)
         b = theano.shared(B, name='b', borrow=True)
+        self.W = W
+        self.V = V
+        self.b = b
+        self.mu = mu
         self.param = [W, V, mu, b]
         # input variable (matrix) with each row corresponding to each user's
         # vector of indices of observed values
@@ -71,11 +76,14 @@ class AutoEncoder(object):
             # target
             # Check for mem. aliasing
             tar = rat[rat_nz]
-            hidden_activation = T.tanh(T.dot(V[:, rat_nz], rat[rat_nz]) #\
+            #hidden_activation = T.tanh(T.dot(V[:, rat_nz], rat[rat_nz]) #\
+            #                           + mu)
+            hidden_activation = T.nnet.sigmoid(T.dot(V[:, rat_nz], rat[rat_nz]) #\
                                        + mu)
+
             #print(hidden_activation.tag.test_value.shape)
             #hidden_activation = hidden_activation.reshape((hidden_activation.shape[0], hidden_activation[1]))
-            output_activation = T.tanh(T.dot(W[rat_nz, :], \
+            output_activation = T.nnet.sigmoid(T.dot(W[rat_nz, :], \
                                              hidden_activation) \
                                        + b[rat_nz])
             #print(output_activation.tag.test_value.shape)
@@ -95,16 +103,14 @@ class AutoEncoder(object):
 
         # NO need for mean. T.sum will sum across the whole matrix
         #self.loss = T.mean(T.sum((scan_res - rating) ** 2), axis=1)
-        self.loss = T.sum((scan_res - rating) ** 2)
+        self.loss = T.sum((scan_res - rating) ** 2) + \
+            0.001 * T.sum(W ** 2) + 0.001 * T.sum(V ** 2)
         grads = T.grad(self.loss, self.param)
         updates = [(param, param - lr * grad) for (param, grad) in \
                    zip(self.param, grads)]
 
         self.ae_batch = theano.function([rating], self.loss, updates=updates)
         self.debug = theano.function([rating], scan_res, updates=None)
-        # Theano function to get params
-        self.get_params = theano.function([], self.param)
-
 
     def model(self, lr = 0.4, loss='rmse'):
         ''' Define model on single example (batch_size = 1) '''
@@ -158,6 +164,8 @@ class AutoEncoder(object):
                                      outputs=self.loss, updates=updates)
 
 
+    def get_params(self):
+        return self.W.get_value(), self.V.get_value(), self.b.get_value(), self.mu.get_value()
 
 if __name__ == "__main__":
     AE = AutoEncoder('../data/data.mat', 100)
