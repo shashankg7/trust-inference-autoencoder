@@ -33,7 +33,7 @@ class AutoEncoder(object):
         self.b = []
         self.mu = []
 
-    def model_batch(self, loss='bce', lr=0.1):
+    def model_batch(self, loss='bce', lr=0.001):
         ''' define the AutoEncoder model (mini-batch) '''
         # initializing network paramters
         w = np.random.uniform(low=-np.sqrt(6 / float(self.n + self.k)),
@@ -103,8 +103,8 @@ class AutoEncoder(object):
 
         # NO need for mean. T.sum will sum across the whole matrix
         #self.loss = T.mean(T.sum((scan_res - rating) ** 2), axis=1)
-        self.loss = T.sum((scan_res - rating) ** 2) + \
-            0.001 * T.sum(W ** 2) + 0.001 * T.sum(V ** 2)
+        self.loss = T.sum((scan_res - rating) ** 2) #+ \
+           # 0.001 * T.sum(W ** 2) + 0.001 * T.sum(V ** 2)
         grads = T.grad(self.loss, self.param)
         updates = [(param, param - lr * grad) for (param, grad) in \
                    zip(self.param, grads)]

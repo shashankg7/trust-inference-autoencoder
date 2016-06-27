@@ -9,6 +9,8 @@ from model import AutoEncoder
 import pdb
 import resource
 from scipy.special import expit
+import gc
+
 #rsrc = resource.RLIMIT_DATA
 #soft, hard = resource.getrlimit(rsrc)
 #print 'Soft limit starts as :', soft
@@ -18,10 +20,10 @@ from scipy.special import expit
 #soft, hard = resource.getrlimit(rsrc)
 #print 'Soft limit changed to :', soft
 
-
+f = open('log.txt', 'a')
 class trainAE(object):
 
-    def __init__(self, path, k, lr= 0.1, batch_size=1, loss='bce', n_epochs=50):
+    def __init__(self, path, k, lr= 0.01, batch_size=1, loss='bce', n_epochs=500):
         '''
         Arguments:
             path : path to training data
@@ -75,6 +77,7 @@ class trainAE(object):
         n_users = len(np.unique(nonzero_indices[0]))
         indices = np.unique(nonzero_indices[0])
         for epoch in xrange(self.epochs):
+            l = []
             for ind, i in enumerate(xrange(0, n_users, batch_size)):
                 # CHECK : SEEMS BUGGY. 
                 #------------------------
@@ -88,8 +91,12 @@ class trainAE(object):
                 #loss = self.AE.debug(ratings)
                 #print loss
                 #pdb.set_trace()
-                print("Loss for epoch %d  batch %d is %f"%(epoch, ind, loss))
-            print("RMSE after one epoch is %f"%(self.RMSE()))
+                l.append(loss)
+            m = np.mean(np.array(l))
+            print("mean Loss for epoch %d  batch %d is %f"%(epoch, ind, m))
+            rmse = self.RMSE_sparse()
+            print("RMSE after one epoch is %f"%(rmse))
+            f.write(str(rmse) + '\n')
 
     def RMSE(self):
         W, V, b, mu = self.AE.get_params()
@@ -100,8 +107,8 @@ class trainAE(object):
         rmse = 0
         for i,j in test:
             Rt = self.AE.T[i, :].todense()
-            Rt1 = np.zeros(Rt.shape[1] +1)
-            Rt1[:6541] = Rt
+            Rt1 = np.zeros(Rt.shape[1])
+            Rt1[:] = Rt[:]
             #pdb.set_trace()
             p = expit(np.dot(W, expit(np.dot(V, Rt1) + mu)) + b)
             #p = np.tanh(np.dot(W, np.tanh(np.dot(V, Rt1) + mu)) + b)
@@ -124,26 +131,37 @@ class trainAE(object):
         #pdb.set_trace()
 
     def RMSE_sparse(self):
-        W, V, mu, b = self.AE.get_params()
+        W, V, b, mu = self.AE.get_params()
+        #pdb.set_trace()
+        mu = mu.reshape(100,1)
         print("testing process starts")
         test = self.AE.test_ind
         rat = []
         pred = []
+        rmse = 0
         for i,j in test:
-            Rt = self.AE.T[i, :].todense()
             #pdb.set_trace()
-            ind = self.AE.T[i, :].nonzero()[1]
+            Rt = np.array(self.AE.T[i, :].todense().tolist()).astype(np.float16)
+            #pdb.set_trace()
+            ind = np.where(Rt > 0)[1]
             #pdb.set_trace()
             Rt = Rt.T
-            temp = np.tanh(np.dot(V[:, ind], Rt[ind]) + mu.reshape(100,1))
-            p = np.tanh(np.dot(W, temp) + b)
-            p = p[j]
+            #pdb.set_trace()
+            temp1 = V[:, ind]
+            temp2 = Rt[ind]
+            temp = expit(np.dot(temp1, temp2) + mu)
+            #del temp1
+            #del temp2
+            p = expit(np.dot(W, temp) + b)
+            #pdb.set_trace()
+            p = p[0, j]
             pred.append(p)
             rat.append(self.AE.t[i, j])
+            #gc.collect()
         try:
             rat = np.array(rat)
             pred = np.array(pred)
-            print np.sqrt(np.mean((pred-rat)*2))
+            rmse = np.sqrt(np.mean((pred-rat) ** 2))
         except:
             print "exception"
             pdb.set_trace()
@@ -152,14 +170,15 @@ class trainAE(object):
         np.save('V', V)
         np.save('mu', mu)
         np.save('b', b)
-        pdb.set_trace()
+        return rmse
+        #pdb.set_trace()
 
 
 
 if __name__ == "__main__":
     autoencoder = trainAE('../data/data.mat', 100)
     autoencoder.train_batch(32)
-    autoencoder.RMSE()
+    autoencoder.RMSE_sparse()
 
 
 
